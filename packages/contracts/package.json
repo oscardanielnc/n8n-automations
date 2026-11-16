@@ -1,0 +1,27 @@
+{
+  "name": "@panel/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/contracts.cjs",
+  "module": "./dist/contracts.js",
+  "types": "./dist/contracts.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/contracts.d.ts",
+      "import": "./dist/contracts.js",
+      "require": "./dist/contracts.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/contracts.ts --format esm,cjs --dts --clean",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "tsup": "^9.0.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,21 @@
+# Panel on the Oracle VM (ADR 0002). Joins n8n's network to reach http://n8n:5678; only localhost sees the port,
+# the outside world comes in through Cloudflare Tunnel + Access (e.g. panel.example.com).
+services:
+  panel:
+    image: n8n-panel:latest
+    build:
+      context: ..
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:3110:3110"
+    volumes:
+      - ${HOME}/n8n/shared:/data/shared:ro
+    networks:
+      - n8n
+    mem_limit: 256m
+
+networks:
+  n8n:
+    name: n8n_default
+    external: true

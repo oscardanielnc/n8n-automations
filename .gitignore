@@ -1,0 +1,10 @@
+node_modules/
+dist/
+storybook-static/
+coverage/
+.turbo/
+.env
+.env.*
+!.env.example
+*.log
+.demo-shared/

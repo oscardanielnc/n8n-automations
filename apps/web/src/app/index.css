@@ -1,0 +1,4 @@
+@import '@panel/ui/theme.css';
+
+@source '../../../../packages/ui/src';
+@source '../';

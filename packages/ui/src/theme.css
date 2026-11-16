@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fraunces';
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+@source './';
+
+/* Tokens from docs/design/tokens.md. Pastel pairs pass WCAG AA (ink on its background). */
+@theme {
+  --font-serif: 'Fraunces Variable', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-bg: #f6f4ef;
+  --color-surface: #ffffff;
+  --color-line: #ebe6dc;
+  --color-line-soft: #f0ece4;
+  --color-ink: #1f1d1a;
+  --color-ink-2: #3d3832;
+  --color-muted: #6b665d;
+
+  --color-lav: #ece8ff;
+  --color-lav-ink: #4b3cb0;
+  --color-peach: #ffeadf;
+  --color-peach-ink: #9a3f17;
+  --color-rose: #ffe6ef;
+  --color-rose-ink: #9c2a57;
+  --color-mint: #dff5ea;
+  --color-mint-ink: #1b6b48;
+  --color-butter: #fff3c4;
+  --color-butter-ink: #6e5600;
+  --color-sky: #e0f0ff;
+  --color-sky-ink: #1d5596;
+  --color-slate: #e9eef5;
+  --color-slate-ink: #2f4a6b;
+  --color-sand: #f1efe9;
+  --color-sand-ink: #5c574e;
+
+  --color-ok: #e3f5e1;
+  --color-ok-ink: #1d6b2c;
+  --color-ok-dot: #2f9e44;
+  --color-fail: #fde8e8;
+  --color-fail-ink: #a12a2a;
+  --color-fail-dot: #e5484d;
+  --color-warn: #fff1d6;
+  --color-warn-ink: #8a5300;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ink;
+  }
+}

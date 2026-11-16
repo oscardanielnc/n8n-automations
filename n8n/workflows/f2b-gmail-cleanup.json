@@ -1,0 +1,532 @@
+{
+  "id": "f2bGmailClean001",
+  "name": "F2b - Monthly mail cleanup",
+  "nodes": [
+    {
+      "id": "d3b3c0de-0001-4000-8000-000000000001",
+      "name": "Day 1 of each month 04:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 1,
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 4,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d3b3c0de-0002-4000-8000-000000000002",
+      "name": "Test now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "d3b3c0de-0103-4000-8000-000000000003",
+      "name": "List old personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        100
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "older_than:1y -in:trash"
+            },
+            {
+              "name": "maxResults",
+              "value": "500"
+            },
+            {
+              "name": "includeSpamTrash",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20
+            }
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmailPersonal001",
+          "name": "Gmail - personal"
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3b3c0de-0104-4000-8000-000000000004",
+      "name": "Group ids personal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Gmail accepts up to 1000 ids per batchModify call.\nconst ids = $input.all().flatMap(it => (it.json.messages || []).map(m => m.id));\nconst out = [];\nfor (let i = 0; i < ids.length; i += 1000) out.push({ json: { ids: ids.slice(i, i + 1000) } });\nreturn out.length ? out : [{ json: { ids: [] } }];"
+      }
+    },
+    {
+      "id": "d3b3c0de-0105-4000-8000-000000000005",
+      "name": "Move to Trash personal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/batchModify",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ids: $json.ids, addLabelIds: ['TRASH'] }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmailPersonal001",
+          "name": "Gmail - personal"
+        }
+      },
+      "disabled": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3b3c0de-0203-4000-8000-000000000013",
+      "name": "List old work",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        320
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "older_than:1y -in:trash"
+            },
+            {
+              "name": "maxResults",
+              "value": "500"
+            },
+            {
+              "name": "includeSpamTrash",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20
+            }
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmailWorkCred001",
+          "name": "Gmail - work"
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3b3c0de-0204-4000-8000-000000000014",
+      "name": "Group ids work",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Gmail accepts up to 1000 ids per batchModify call.\nconst ids = $input.all().flatMap(it => (it.json.messages || []).map(m => m.id));\nconst out = [];\nfor (let i = 0; i < ids.length; i += 1000) out.push({ json: { ids: ids.slice(i, i + 1000) } });\nreturn out.length ? out : [{ json: { ids: [] } }];"
+      }
+    },
+    {
+      "id": "d3b3c0de-0205-4000-8000-000000000015",
+      "name": "Move to Trash work",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/batchModify",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ids: $json.ids, addLabelIds: ['TRASH'] }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmailWorkCred001",
+          "name": "Gmail - work"
+        }
+      },
+      "disabled": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3b3c0de-0303-4000-8000-000000000033",
+      "name": "List old Outlook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        540
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages?$select=id&$top=1000&$filter=receivedDateTime%20lt%20{{ $now.minus({ years: 1 }).toUTC().toFormat(\"yyyy-MM-dd'T'HH:mm:ss'Z'\") }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body['@odata.nextLink'] }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body['@odata.nextLink'] }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10
+            }
+          }
+        }
+      },
+      "credentials": {
+        "oAuth2Api": {
+          "id": "outlookCred00001",
+          "name": "Outlook"
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3b3c0de-0304-4000-8000-000000000034",
+      "name": "Group ids Outlook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Graph has no bulk move: one JSON $batch call carries up to 20 \"move\" requests.\nconst ids = $input.all().flatMap(it => (it.json.value || []).map(m => m.id));\nconst out = [];\nfor (let i = 0; i < ids.length; i += 20) {\n  const chunk = ids.slice(i, i + 20);\n  out.push({ json: { ids: chunk, body: { requests: chunk.map((id, k) => ({\n    id: String(k + 1), method: 'POST', url: `/me/messages/${id}/move`,\n    headers: { 'Content-Type': 'application/json' }, body: { destinationId: 'deleteditems' } })) } } });\n}\nreturn out.length ? out : [{ json: { ids: [] } }];"
+      }
+    },
+    {
+      "id": "d3b3c0de-0305-4000-8000-000000000035",
+      "name": "Move to Deleted Outlook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        540
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/$batch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          }
+        }
+      },
+      "credentials": {
+        "oAuth2Api": {
+          "id": "outlookCred00001",
+          "name": "Outlook"
+        }
+      },
+      "disabled": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3b3c0de-0006-4000-8000-000000000006",
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ACCOUNTS = [[\"personal\", \"📧 Gmail personal\"], [\"work\", \"🎓 Work\"]];\nconst dry = false;\nconst outlookLive = true;\nconst lines = [dry ? '🧹 <b>Limpieza de correo (prueba: no se borró nada)</b>' : '🧹 <b>Limpieza de correo</b>'];\nfor (const [name, label] of ACCOUNTS) {\n  let total = 0, pages = 0;\n  try { total = $(`Group ids ${name}`).all().reduce((n, it) => n + it.json.ids.length, 0); } catch (e) {}\n  try { pages = $(`List old ${name}`).all().length; } catch (e) {}\n  lines.push(`${label}: ${total} correos de más de 1 año ${dry ? 'encontrados' : '→ papelera'}${pages >= 20 ? ' (quedan más: siguen el próximo mes)' : ''}`);\n}\nlet ol = 0;\ntry { ol = $('Group ids Outlook').all().reduce((n, it) => n + (it.json.ids || []).length, 0); } catch (e) {}\nconst olMore = ol >= 10000 ? ' (quedan más: siguen el próximo mes)' : '';\nif (dry || !outlookLive) lines.push(`📨 Outlook: ${ol} correos de más de 1 año encontrados${olMore}${!dry && !outlookLive ? ' — <i>no se tocan hasta tu OK</i>' : ''}`);\nelse lines.push(`📨 Outlook: ${ol} correos de más de 1 año → Elementos eliminados${olMore}`);\nif (!dry) lines.push('Gmail los borra solo en 30 días (hasta entonces se pueden recuperar).');\nreturn [{ json: { text: lines.join('\\n') } }];"
+      }
+    },
+    {
+      "id": "d3b3c0de-0007-4000-8000-000000000007",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        200
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "telegramCred0001",
+          "name": "Telegram bot"
+        }
+      }
+    },
+    {
+      "id": "d3b3c0de-0099-4000-8000-000000000101",
+      "name": "Note 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        200,
+        -320
+      ],
+      "parameters": {
+        "width": 760,
+        "height": 360,
+        "content": "## Monthly mail cleanup (Gmail personal + work + Outlook)\nSame 3 nodes per account, one after the other: **HTTP Request + pagination** lists ids matching `older_than:1y -in:trash` (500 per page, max 20 pages = 10,000 per run) → **Code** groups them by 1000 → **HTTP batchModify** adds the `TRASH` label (moves to Trash, not a permanent delete). Each chain uses its own **credential**.\nGmail empties Trash after 30 days → one month to recover anything.\n**Outlook** (Microsoft Graph): list ids with `@odata.nextLink` pagination (1000 per page, max 10 pages) → **Code** packs 20 `move` requests per **JSON $batch** call → *Deleted Items* (one call every 1.5 s, Outlook rate limits)."
+      }
+    }
+  ],
+  "connections": {
+    "List old personal": {
+      "main": [
+        [
+          {
+            "node": "Group ids personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group ids personal": {
+      "main": [
+        [
+          {
+            "node": "Move to Trash personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Day 1 of each month 04:00": {
+      "main": [
+        [
+          {
+            "node": "List old personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test now": {
+      "main": [
+        [
+          {
+            "node": "List old personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List old work": {
+      "main": [
+        [
+          {
+            "node": "Group ids work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group ids work": {
+      "main": [
+        [
+          {
+            "node": "Move to Trash work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Trash personal": {
+      "main": [
+        [
+          {
+            "node": "List old work",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Trash work": {
+      "main": [
+        [
+          {
+            "node": "List old Outlook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List old Outlook": {
+      "main": [
+        [
+          {
+            "node": "Group ids Outlook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group ids Outlook": {
+      "main": [
+        [
+          {
+            "node": "Move to Deleted Outlook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move to Deleted Outlook": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Lima",
+    "saveManualExecutions": true,
+    "errorWorkflow": "f5ErrorAlerts001"
+  },
+  "pinData": {},
+  "active": false
+}
